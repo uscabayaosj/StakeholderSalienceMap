@@ -171,11 +171,11 @@ if not stakeholders_df.empty:
             st.success("✅ All stakeholders have been cleared.")
             st.cache_data.clear()  # Clear the cache to refresh the data
             st.session_state.clear_stakeholders = False
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.info("ℹ️ Action canceled.")
             st.session_state.clear_stakeholders = False
-            st.rerun()
+            st.experimental_rerun()
 
     # --------------------------------------------------------
     # Salience Categorization
