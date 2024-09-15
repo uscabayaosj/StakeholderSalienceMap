@@ -53,13 +53,6 @@ with get_connection() as conn:
     conn.commit()
 
 # --------------------------------------------------------
-# State Management
-# --------------------------------------------------------
-
-if 'clear_stakeholders' not in st.session_state:
-    st.session_state.clear_stakeholders = False
-
-# --------------------------------------------------------
 # Sidebar for Adding Stakeholders
 # --------------------------------------------------------
 
@@ -114,68 +107,83 @@ st.header("📋 Stakeholders List")
 @st.cache_data(ttl=1)
 def load_stakeholders():
     with get_connection() as conn:
-        return pd.read_sql_query("SELECT name, power, legitimacy, urgency FROM stakeholders", conn)
+        return pd.read_sql_query("SELECT id, name, power, legitimacy, urgency FROM stakeholders", conn)
+
+# Function to delete a stakeholder
+def delete_stakeholder(stakeholder_id):
+    with get_connection() as conn:
+        c = conn.cursor()
+        c.execute("DELETE FROM stakeholders WHERE id = ?", (stakeholder_id,))
+        conn.commit()
+    st.cache_data.clear()
+    st.rerun()
 
 # Load stakeholders
 stakeholders_df = load_stakeholders()
 
 if not stakeholders_df.empty:
-    st.dataframe(stakeholders_df)
+    # Create a stylish display for stakeholders
+    st.markdown("""
+    <style>
+    .stakeholder-box {
+        background-color: #f0f2f6;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .stakeholder-name {
+        font-weight: bold;
+        font-size: 18px;
+    }
+    .stakeholder-attribute {
+        display: inline-block;
+        margin-right: 15px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    for index, row in stakeholders_df.iterrows():
+        st.markdown(f"""
+        <div class="stakeholder-box">
+            <p class="stakeholder-name">{row['name']}</p>
+            <p>
+                <span class="stakeholder-attribute">Power: {row['power']}</span>
+                <span class="stakeholder-attribute">Legitimacy: {row['legitimacy']}</span>
+                <span class="stakeholder-attribute">Urgency: {row['urgency']}</span>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button(f"Delete {row['name']}", key=f"delete_{row['id']}"):
+            delete_stakeholder(row['id'])
 
     # --------------------------------------------------------
     # Exporting Data
     # --------------------------------------------------------
 
     st.markdown("### 📥 Export Stakeholders Data")
+    col1, col2 = st.columns(2)
+    
     csv = stakeholders_df.to_csv(index=False).encode("utf-8")
+    col1.download_button(
+        label="📄 Download CSV",
+        data=csv,
+        file_name="stakeholders.csv",
+        mime="text/csv",
+    )
 
     # Convert DataFrame to Excel in memory
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         stakeholders_df.to_excel(writer, index=False, sheet_name="Stakeholders")
     excel_data = buffer.getvalue()
-
-    st.download_button(
-        label="📄 Download CSV",
-        data=csv,
-        file_name="stakeholders.csv",
-        mime="text/csv",
-    )
-    st.download_button(
+    
+    col2.download_button(
         label="📑 Download Excel",
         data=excel_data,
         file_name="stakeholders.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-
-    # --------------------------------------------------------
-    # Clear All Stakeholders
-    # --------------------------------------------------------
-
-    if st.button("🗑️ Clear All Stakeholders"):
-        st.session_state.clear_stakeholders = True
-
-    if st.session_state.clear_stakeholders:
-        # Confirmation dialog using radio buttons
-        confirmation = st.radio(
-            "⚠️ Are you sure you want to delete all stakeholders?",
-            options=["No", "Yes"],
-            index=0,
-            horizontal=True,
-        )
-        if confirmation == "Yes":
-            with get_connection() as conn:
-                c = conn.cursor()
-                c.execute("DELETE FROM stakeholders.db")
-                conn.commit()
-            st.success("✅ All stakeholders have been cleared.")
-            st.cache_data.clear()  # Clear the cache to refresh the data
-            st.session_state.clear_stakeholders = False
-            st.experimental_rerun()
-        else:
-            st.info("ℹ️ Action canceled.")
-            st.session_state.clear_stakeholders = False
-            st.experimental_rerun()
 
     # --------------------------------------------------------
     # Salience Categorization
@@ -212,13 +220,40 @@ if not stakeholders_df.empty:
     stakeholders_df["Salience"] = stakeholders_df.apply(categorize_salience, axis=1)
 
     st.header("🗂️ Salience Categories")
-    st.dataframe(stakeholders_df)
+    st.dataframe(stakeholders_df[["name", "power", "legitimacy", "urgency", "Salience"]])
 
     # --------------------------------------------------------
     # Plotting the Salience Map
     # --------------------------------------------------------
 
     st.header("📈 Salience Map")
+
+    # Add detailed legend explanation
+    st.markdown("""
+    ### Legend Explanation
+
+    This bubble plot visualizes stakeholders based on their Power, Legitimacy, and Urgency:
+
+    - **X-axis**: Represents the **Power** of the stakeholder (scale 1-5)
+    - **Y-axis**: Represents the **Legitimacy** of the stakeholder (scale 1-5)
+    - **Bubble Size**: Represents the **Urgency** of the stakeholder (larger bubbles indicate higher urgency)
+    - **Color**: Represents the **Salience Category** of the stakeholder
+
+    #### Salience Categories:
+
+    1. **Definitive** (Red): High in all attributes (Power, Legitimacy, Urgency)
+    2. **Dominant** (Orange): High in Power and Legitimacy
+    3. **Dangerous** (Brown): High in Power and Urgency
+    4. **Dependent** (Purple): High in Legitimacy and Urgency
+    5. **Dormant** (Blue): High in Power only
+    6. **Discretionary** (Green): High in Legitimacy only
+    7. **Demanding** (Yellow): High in Urgency only
+    8. **Non-salient** (Gray): Low in all attributes
+
+    *Note: "High" is considered a score of 3 or above on the 1-5 scale.*
+
+    Hover over each bubble to see the stakeholder's name and exact scores.
+    """)
 
     # Define color mapping based on Salience
     color_map = {
@@ -242,7 +277,8 @@ if not stakeholders_df.empty:
         size="urgency",
         color="Salience",
         hover_name="name",
-        size_max=20,
+        hover_data=["power", "legitimacy", "urgency"],
+        size_max=30,
         color_discrete_map=color_map,
         labels={
             "power": "Power",
@@ -253,8 +289,8 @@ if not stakeholders_df.empty:
     )
 
     fig.update_layout(
-        xaxis=dict(tickmode="linear", dtick=1),
-        yaxis=dict(tickmode="linear", dtick=1),
+        xaxis=dict(tickmode="linear", dtick=1, range=[0.5, 5.5]),
+        yaxis=dict(tickmode="linear", dtick=1, range=[0.5, 5.5]),
         legend_title="Salience Categories",
     )
 
