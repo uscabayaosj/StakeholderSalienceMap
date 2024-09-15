@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import sqlite3
 from pathlib import Path
 from io import BytesIO
@@ -295,6 +296,48 @@ if not stakeholders_df.empty:
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+    # --------------------------------------------------------
+    # Spider Chart Visualization
+    # --------------------------------------------------------
+
+    st.header("🕸️ Spider Chart Visualization")
+
+    # Allow user to select stakeholders for the spider chart
+    selected_stakeholders = st.multiselect(
+        "Select stakeholders to include in the spider chart:",
+        options=stakeholders_df['name'].tolist(),
+        default=stakeholders_df['name'].tolist()[:5]  # Default to first 5 stakeholders
+    )
+
+    if selected_stakeholders:
+        # Filter the dataframe based on selected stakeholders
+        selected_df = stakeholders_df[stakeholders_df['name'].isin(selected_stakeholders)]
+
+        # Create the spider chart
+        fig = go.Figure()
+
+        for _, row in selected_df.iterrows():
+            fig.add_trace(go.Scatterpolar(
+                r=[row['power'], row['legitimacy'], row['urgency'], row['power']],
+                theta=['Power', 'Legitimacy', 'Urgency', 'Power'],
+                fill='toself',
+                name=row['name']
+            ))
+
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 5]
+                )),
+            showlegend=True,
+            title="Stakeholder Comparison Spider Chart"
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Please select at least one stakeholder to display the spider chart.")
 
 else:
     st.info("ℹ️ No stakeholders added yet. Please add stakeholders from the sidebar.")
