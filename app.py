@@ -349,6 +349,9 @@ else:
 st.markdown(
     """
 ---
-*Created with ❤️ using Streamlit.*
+©️2024 AnthroInsight. All rights reserved.
+
+Citation:
+Cabayao, U. (2024). StakeholderSalienceMap [Web App]. Github. https://https://github.com/uscabayaosj/StakeholderSalienceMap/
 """
 )
