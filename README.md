@@ -1,85 +1,83 @@
-# Stakeholder Salience Map App
+# Stakeholder Salience Map
 
-## 📊 Overview
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://stakeholdersaliencemap.streamlit.app)
 
-The Stakeholder Salience Map App is a Streamlit-based web application designed to help users create, visualize, and analyze stakeholder salience based on the attributes of Power, Legitimacy, and Urgency. This tool is particularly useful for project managers, business analysts, and decision-makers who need to understand and prioritize stakeholders in their projects or initiatives.
+A **Streamlit** web application for mapping and analysing stakeholders using Mitchell's salience framework (Power, Legitimacy, Urgency). Now with optional **AI-powered insights** via [OpenRouter](https://openrouter.ai/).
 
-## ✨ Features
+## Features
 
-- **Add Stakeholders**: Easily input stakeholder information, including name and scores for Power, Legitimacy, and Urgency.
-- **Stakeholder List**: View all added stakeholders in a clean, styled list format.
-- **Individual Deletion**: Remove specific stakeholders from the list as needed.
-- **Data Export**: Download stakeholder data in CSV or Excel format for further analysis.
-- **Salience Categorization**: Automatically categorize stakeholders based on their attribute scores.
-- **Interactive Salience Map**: Visualize stakeholders in a bubble plot, with size and color indicating different attributes and categories.
-- **Spider Chart Comparison**: Select and compare multiple stakeholders using an interactive spider chart.
-- **Detailed Explanations**: Understand the Salience Map and categories with comprehensive in-app explanations.
+- **Add & manage stakeholders** — score Power, Legitimacy, and Urgency (1–5)
+- **Automatic categorisation** — Definitive, Dominant, Dangerous, Dependent, Dormant, Discretionary, Demanding, or Non-salient
+- **Interactive bubble map** — visually explore the salience landscape
+- **Spider chart** — compare any subset of stakeholders side-by-side
+- **Export** — download your data as CSV or Excel
+- **AI Insights** — get a quick scan, deep analysis, or strategy suggestions powered by any OpenRouter model
 
-## 🛠️ Installation
+## Quickstart
 
-1. Clone this repository:
-   ```
-   git clone https://github.com/yourusername/stakeholder-salience-map.git
-   cd stakeholder-salience-map
-   ```
+```bash
+# 1. Clone
+git clone https://github.com/uscabayaosj/StakeholderSalienceMap.git
+cd StakeholderSalienceMap
 
-2. Create a virtual environment (optional but recommended):
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-   ```
+# 2. Optional: virtual environment
+python -m venv .venv && source .venv/bin/activate
 
-3. Install the required packages:
-   ```
-   pip install -r requirements.txt
-   ```
+# 3. Install dependencies (much leaner than before — only 6 packages)
+pip install -r requirements.txt
 
-## 🚀 Usage
+# 4. (Optional) Set up OpenRouter for AI insights
+cp .env.example .env
+# Edit .env with your key: https://openrouter.ai/keys
 
-1. Run the Streamlit app:
-   ```
-   streamlit run app.py
-   ```
+# 5. Run
+streamlit run app.py
+```
 
-2. Open your web browser and go to the URL provided by Streamlit (usually `http://localhost:8501`).
+Open your browser at `http://localhost:8501`.
 
-3. Use the sidebar to add new stakeholders by entering their name and scoring their Power, Legitimacy, and Urgency on a scale of 1-5.
+## AI Insights (OpenRouter)
 
-4. View the list of stakeholders, export data, and analyze the Salience Map and Spider Chart visualizations in the main area of the app.
+The app can analyse your stakeholder landscape using any model available on OpenRouter. To enable:
 
-## 📖 How It Works
+1. Get a free API key at https://openrouter.ai/keys
+2. Copy `.env.example` → `.env` and paste your key
+3. Three modes:
+   - **Quick Scan** — 3-paragraph snapshot of risks and attention gaps
+   - **Deep Analysis** — 5–6 paragraph theoretical analysis
+   - **Strategy Suggestions** — 4–6 actionable recommendations
 
-The app uses the following criteria to categorize stakeholders:
+The default model is `deepseek/deepseek-chat` (fast and free). Change it in `.env` via `OPENROUTER_MODEL` — any OpenRouter model works.
 
-- **Definitive**: High in all attributes (Power, Legitimacy, Urgency)
-- **Dominant**: High in Power and Legitimacy
-- **Dangerous**: High in Power and Urgency
-- **Dependent**: High in Legitimacy and Urgency
-- **Dormant**: High in Power only
-- **Discretionary**: High in Legitimacy only
-- **Demanding**: High in Urgency only
-- **Non-salient**: Low in all attributes
+## How It Works
 
-A score of 3 or above is considered "High" for each attribute.
+Scores **≥ 3** count as "high". Categories follow Mitchell, Agle & Wood (1997):
 
-## 🗃️ Data Storage
+| Category | High Attributes | Colour |
+|---|---|---|
+| **Definitive** | Power + Legitimacy + Urgency | 🔴 Red |
+| **Dominant** | Power + Legitimacy | 🟠 Orange |
+| **Dangerous** | Power + Urgency | 🟣 Purple |
+| **Dependent** | Legitimacy + Urgency | 🟣 Violet |
+| **Dormant** | Power only | 🔵 Blue |
+| **Discretionary** | Legitimacy only | 🟢 Green |
+| **Demanding** | Urgency only | 🟡 Yellow |
+| **Non-salient** | None | ⚪ Grey |
 
-The app uses a SQLite database to store stakeholder information locally. The database file (`stakeholders.db`) is created in the same directory as the app.
+## What Changed (v2)
 
-## 🤝 Contributing
+- **OpenRouter AI** replaces any previous OpenAI dependency — zero vendor lock-in
+- **60 % fewer dependencies** — from 49 pinned packages down to 6
+- **SQLite WAL mode** — faster concurrent reads
+- **Smarter caching** — `st.cache_data` with TTL on DB queries and category computation
+- **Cleaner UI** — inline delete buttons, toast notifications, consistent spider-chart colours
+- **Secure by default** — `.gitignore` covers `.env`, `*.db`, `__pycache__`; credentials removed from repo
+- **Dead code removed** — orphaned Express/MongoDB auth files deleted
 
-Contributions to improve the Stakeholder Salience Map App are welcome! Please feel free to submit issues, fork the repository and send pull requests!
+## Citation
 
-## 📄 License
+Cabayao, U. (2024). *StakeholderSalienceMap* [Web App]. GitHub. https://github.com/uscabayaosj/StakeholderSalienceMap/
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## License
 
-## 📬 Citation / Contact
-
-Cabayao, U. (2024). StakeholderSalienceMap [Web App]. Github. https://https://github.com/uscabayaosj/StakeholderSalienceMap/
-
-If you have any questions, feel free to reach out to **Ulysses Cabayao, SJ** at [uscabayaosj@addu.edu.ph].
-
----
-
-Created with ❤️ using Streamlit and Plotly.
+MIT
